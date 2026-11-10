@@ -123,6 +123,21 @@ curl http://localhost
 
 ポート番号なしの `http://localhost` で Tomcat の "It works !" ページが表示されればリバースプロキシ成功。
 
+### Nginx 経由で Tomcat が応答しているかの見分け方
+
+`curl -I http://localhost` の結果は `Server: nginx/1.28.3 (Ubuntu)` になる。これは Nginx が転送時に `Server` ヘッダーを自分の名前で上書きするためで、中身が Tomcat かどうかは別の項目で判断する。
+
+```bash
+curl -I http://localhost
+curl -I http://127.0.0.1:8080
+```
+
+| 見るところ | Tomcat から返っている場合 |
+| --- | --- |
+| `ETag` | `W/"1905-1794309803442"` のような「サイズ-更新時刻(ミリ秒)」の形 (Nginx 自身なら `"xxxx-xxxx"` の16進数) |
+| 80番と8080番の比較 | `ETag` と `Content-Length` が一致する |
+| 本文 | `curl -s http://localhost \| grep -i "<title>"` で `<title>Apache Tomcat</title>` が出る |
+
 ## ハマった点
 
 ### セミコロンの付け忘れ
