@@ -160,6 +160,46 @@ nginx: [emerg] invalid number of arguments in "proxy_pass" directive in /etc/ngi
 
 エラーで指摘される行が、実際に `;` を忘れた行の **次の行** になることがあるので、指摘行の 1 つ上も確認する。
 
+`upstream` ブロックの `server` 行でも同じミスをした。
+
+```nginx
+# NG (2行が1つのディレクティブとして読まれる)
+upstream tomcat {
+	server 127.0.0.1:8080
+	server 127.0.0.1:8081
+}
+
+# OK
+upstream tomcat {
+	server 127.0.0.1:8080;
+	server 127.0.0.1:8081;
+}
+```
+
+この場合は `;` がないまま `}` まで読み進むので、`unexpected "}"` のようなエラーになり、指摘されるのは `}` の行になる。
+
+### upstream 名と proxy_pass の名前の不一致
+
+`upstream` で付けた名前と `proxy_pass` に書く名前は完全に一致させる。
+
+```nginx
+upstream tomcat {
+	...
+}
+
+# NG (s が余計)
+proxy_pass http://tomcats;
+
+# OK
+proxy_pass http://tomcat;
+```
+
+不一致だと `nginx -t` で以下のエラーになる。
+
+```
+nginx: [emerg] host not found in upstream "tomcats" in /etc/nginx/sites-enabled/default:...
+```
+
 ### 波カッコの閉じ忘れ
 
 `server { ... }` や `location / { ... }` の `}` を閉じ忘れると、以下のエラーになる。
