@@ -1,0 +1,9 @@
+[Unit]
+Description=Worklog GUI (作業記録まとめツール)
+
+[Service]
+ExecStart=/usr/bin/python3 %h/infra-notes/worklog/app.py
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>作業記録まとめ</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1d2330; --muted: #677085;
+    --line: #dde1e8; --accent: #2f6fdb; --accent-text: #ffffff;
+    --ok: #1f8a4c; --err: #c23b3b; --code: #f0f2f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c; --panel: #1c2027; --text: #e4e7ec; --muted: #949cad;
+      --line: #2e343e; --accent: #5b93f0; --accent-text: #0d1117;
+      --ok: #4cc283; --err: #f07a7a; --code: #252a33;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.6 system-ui, "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+    padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { font-size: 17px; margin: 0 auto 0 0; }
+  main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 20px; max-width: 1500px; margin: 0 auto; }
+  @media (max-width: 960px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
+  h2 { font-size: 14px; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+  h2 .count { color: var(--muted); font-weight: normal; }
+  h2 label { margin-left: auto; font-weight: normal; color: var(--muted); font-size: 13px; }
+  .hint { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
+  input[type=date], input[type=text], textarea {
+    font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 8px; width: 100%; }
+  input[type=date] { width: auto; }
+  textarea { resize: vertical; min-height: 70px; }
+  textarea.mono, pre, code, .cmd { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12.5px; }
+  #draft { min-height: 420px; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--text);
+    border-radius: 6px; padding: 6px 14px; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  .list { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; }
+  .list label { display: flex; gap: 8px; align-items: baseline; padding: 3px 8px; border-bottom: 1px solid var(--line); }
+  .list label:last-child { border-bottom: 0; }
+  .list .time { color: var(--muted); font-size: 12px; min-width: 38px; }
+  .list .cmd { word-break: break-all; }
+  .list .trivial .cmd { color: var(--muted); }
+  pre { background: var(--code); border-radius: 6px; padding: 8px 10px; margin: 0; overflow: auto; max-height: 260px; white-space: pre-wrap; word-break: break-all; }
+  .empty { color: var(--muted); font-size: 13px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row input[type=text] { flex: 1; min-width: 200px; }
+  .field { margin-bottom: 10px; }
+  .field > span { display: block; font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  #msg { font-size: 13px; }
+  #msg.ok { color: var(--ok); } #msg.err { color: var(--err); }
+  details summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  td { border-bottom: 1px solid var(--line); padding: 3px 6px; }
+  td:last-child { font-family: ui-monospace, Consolas, monospace; }
+</style>
+</head>
+<body>
+<header>
+  <h1>作業記録まとめ</h1>
+  <input type="date" id="date" aria-label="日付">
+  <button class="primary" id="collect">収集</button>
+  <span id="msg" role="status"></span>
+</header>
+
+<main>
+  <div>
+    <section>
+      <h2>実行したコマンド <span class="count" id="cmdCount"></span>
+        <label><input type="checkbox" id="showTrivial"> ls・cd なども表示</label></h2>
+      <p class="hint">チェックしたコマンドが下書きに入ります。</p>
+      <div class="list" id="cmds"></div>
+      <details id="undatedBox">
+        <summary>日時のない履歴（日時記録の設定前） <span id="undatedCount"></span></summary>
+        <p class="hint">日時が残っていないため、どの日の作業か判別できません。必要なものだけチェックしてください。</p>
+        <div class="list" id="undated"></div>
+      </details>
+    </section>
+
+    <section>
+      <h2>apt でのインストール・削除 <span class="count" id="aptCount"></span>
+        <label><input type="checkbox" id="incApt" checked> 下書きに入れる</label></h2>
+      <div id="apt"></div>
+    </section>
+
+    <section>
+      <h2>Nginx 設定 <label><input type="checkbox" id="incConf"> 下書きに入れる</label></h2>
+      <p class="hint" id="confPath"></p>
+      <pre id="conf"></pre>
+    </section>
+
+    <section>
+      <h2>エラーログ <span class="count" id="errCount"></span>
+        <label><input type="checkbox" id="incErr" checked> 下書きに入れる</label></h2>
+      <div id="errors"></div>
+    </section>
+
+    <section>
+      <h2>環境 <label><input type="checkbox" id="incVer" checked> 下書きに入れる</label></h2>
+      <table id="versions"></table>
+    </section>
+  </div>
+
+  <div>
+    <section>
+      <h2>まとめ</h2>
+      <label class="field"><span>タイトル</span>
+        <input type="text" id="title" placeholder="例: Nginx から Tomcat への負荷分散"></label>
+      <label class="field"><span>やったこと</span>
+        <textarea id="summary" placeholder="今日の作業の概要"></textarea></label>
+      <label class="field"><span>ハマった点</span>
+        <textarea id="pitfalls" placeholder="- upstream の server 行にセミコロンを付け忘れた"></textarea></label>
+      <label class="field"><span>考えたこと・メモ</span>
+        <textarea id="memo" placeholder="次に試したいこと、疑問点など"></textarea></label>
+    </section>
+
+    <section>
+      <h2>下書き（README.md に追記される内容）
+        <label><button id="regen" title="左の選択とまとめから作り直す">再生成</button></label></h2>
+      <p class="hint" id="draftHint">左の選択とまとめの入力に合わせて自動で更新されます。</p>
+      <textarea class="mono" id="draft" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="save">README に追記</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>コミット</h2>
+      <div class="row">
+        <input type="text" id="commitMsg" placeholder="コミットメッセージ">
+        <button class="primary" id="commit">コミット</button>
+      </div>
+      <details open>
+        <summary>git の状態</summary>
+        <pre id="git"></pre>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let data = null;
+let draftEdited = false;
+
+function setMsg(text, kind) {
+  $("msg").textContent = text;
+  $("msg").className = kind || "";
+}
+
+async function api(path, body) {
+  const opt = body === undefined ? {} : {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Worklog": "1" },
+    body: JSON.stringify(body),
+  };
+  const res = await fetch(path, opt);  // 相対パス: /worklog/ 配下でもそのまま動く
+  const json = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+  return { status: res.status, ...json };
+}
+
+function el(tag, props = {}, children = []) {
+  const e = Object.assign(document.createElement(tag), props);
+  for (const c of children) e.append(c);
+  return e;
+}
+
+function cmdRow(item, checked) {
+  const box = el("input", { type: "checkbox", checked });
+  box.dataset.cmd = item.cmd;
+  box.addEventListener("change", refreshDraft);
+  return el("label", { className: item.trivial ? "trivial" : "" }, [
+    box,
+    el("span", { className: "time", textContent: item.time || "" }),
+    el("span", { className: "cmd", textContent: item.cmd }),
+  ]);
+}
+
+function renderCommands() {
+  const showTrivial = $("showTrivial").checked;
+  const list = $("cmds");
+  list.replaceChildren();
+  const items = data.commands.filter((c) => showTrivial || !c.trivial);
+  $("cmdCount").textContent = `${data.commands.length} 件`;
+  if (!items.length) {
+    list.append(el("p", { className: "empty", textContent: "この日の日時付き履歴はありません。", style: "padding:6px 8px;margin:0" }));
+  }
+  items.forEach((c) => list.append(cmdRow(c, !c.trivial)));
+
+  const und = $("undated");
+  und.replaceChildren();
+  const undItems = data.undated.filter((c) => showTrivial || !c.trivial);
+  $("undatedCount").textContent = `(${data.undated.length} 件)`;
+  $("undatedBox").hidden = !data.undated.length;
+  undItems.forEach((c) => und.append(cmdRow(c, false)));
+}
+
+function renderApt() {
+  const box = $("apt");
+  box.replaceChildren();
+  $("aptCount").textContent = `${data.apt.length} 件`;
+  if (!data.apt.length) {
+    box.append(el("p", { className: "empty", textContent: "この日の apt 履歴はありません。" }));
+    return;
+  }
+  const pre = el("pre", { textContent: aptLines().join("\n") });
+  box.append(pre);
+}
+
+function aptLines() {
+  const lines = [];
+  for (const ev of data.apt) {
+    lines.push(`${ev.time}  ${ev.command}`);
+    for (const [key, label] of [["install", "インストール"], ["remove", "削除"], ["purge", "完全削除"]]) {
+      const x = ev[key];
+      if (!x) continue;
+      const names = x.packages.map((p) => `${p.name} ${p.version}`).join(", ");
+      const auto = x.automatic ? `（依存 ${x.automatic} 件）` : "";
+      lines.push(`  ${label}: ${names || "-"}${auto}`);
+    }
+    if (ev.upgrade) lines.push(`  アップグレード: ${ev.upgrade} 件`);
+  }
+  return lines;
+}
+
+function renderRest() {
+  $("confPath").textContent = data.nginx.error ? `${data.nginx.path} を読めません: ${data.nginx.error}` : `${data.nginx.path}（コメントと空行を除く）`;
+  $("conf").textContent = data.nginx.content;
+
+  const errs = $("errors");
+  errs.replaceChildren();
+  const n = data.errors.nginx.length + data.errors.tomcat.length;
+  $("errCount").textContent = `${n} 件`;
+  if (!n) errs.append(el("p", { className: "empty", textContent: "この日のエラーはありません。" }));
+  if (data.errors.nginx.length) errs.append(el("p", { className: "hint", textContent: "Nginx (/var/log/nginx/error.log)" }), el("pre", { textContent: data.errors.nginx.join("\n") }));
+  if (data.errors.tomcat.length) errs.append(el("p", { className: "hint", textContent: "Tomcat (journalctl -u tomcat10)" }), el("pre", { textContent: data.errors.tomcat.join("\n") }));
+
+  const t = $("versions");
+  t.replaceChildren();
+  data.versions.forEach((v) => t.append(el("tr", {}, [el("td", { textContent: v.name }), el("td", { textContent: v.version })])));
+}
+
+function selectedCommands() {
+  const out = [];
+  document.querySelectorAll("#cmds input:checked, #undated input:checked").forEach((b) => {
+    if (out[out.length - 1] !== b.dataset.cmd) out.push(b.dataset.cmd);
+  });
+  return out;
+}
+
+function buildDraft() {
+  if (!data) return "";
+  const parts = [];
+  const title = $("title").value.trim();
+  parts.push(`### ${data.date}${title ? " " + title : ""}`);
+  const block = (heading, body) => { if (body.trim()) parts.push(`#### ${heading}\n\n${body.trim()}`); };
+
+  block("やったこと", $("summary").value);
+  const cmds = selectedCommands();
+  if (cmds.length) block("実行したコマンド", "```bash\n" + cmds.join("\n") + "\n```");
+  if ($("incApt").checked && data.apt.length) block("apt でのインストール・削除", "```\n" + aptLines().join("\n") + "\n```");
+  if ($("incConf").checked && data.nginx.content) block("Nginx 設定", `\`${data.nginx.path}\`\n\n\`\`\`nginx\n${data.nginx.content}\n\`\`\``);
+  block("ハマった点", $("pitfalls").value);
+  block("考えたこと・メモ", $("memo").value);
+  if ($("incErr").checked) {
+    const logs = [...data.errors.nginx, ...data.errors.tomcat];
+    if (logs.length) block("エラーログ", "```\n" + logs.join("\n") + "\n```");
+  }
+  if ($("incVer").checked && data.versions.length) {
+    block("環境", "| 項目 | バージョン |\n| --- | --- |\n" + data.versions.map((v) => `| ${v.name} | ${v.version} |`).join("\n"));
+  }
+  return parts.join("\n\n") + "\n";
+}
+
+function refreshDraft(force) {
+  if (draftEdited && force !== true) return;
+  $("draft").value = buildDraft();
+  draftEdited = false;
+  $("draftHint").textContent = "左の選択とまとめの入力に合わせて自動で更新されます。";
+}
+
+async function loadStatus() {
+  const s = await api("api/status");
+  $("git").textContent = (s.status ? "変更あり:\n" + s.status + "\n" : "変更なし\n\n") + "最近のコミット:\n" + s.log;
+}
+
+async function collect() {
+  setMsg("収集中…");
+  $("collect").disabled = true;
+  try {
+    const res = await api(`api/collect?date=${encodeURIComponent($("date").value)}`);
+    if (res.error) throw new Error(res.error);
+    data = res;
+    renderCommands(); renderApt(); renderRest();
+    refreshDraft(true);
+    if (!$("commitMsg").value) $("commitMsg").value = `Add worklog for ${data.date}`;
+    setMsg(`${data.date} の情報を集めました`, "ok");
+  } catch (e) {
+    setMsg("収集に失敗しました: " + e.message, "err");
+  } finally {
+    $("collect").disabled = false;
+  }
+}
+
+async function save() {
+  const markdown = $("draft").value;
+  let res = await api("api/save", { date: data.date, markdown });
+  if (res.status === 409 && confirm(res.error + "\nそれでも追記しますか？")) {
+    res = await api("api/save", { date: data.date, markdown, force: true });
+  }
+  if (res.ok) setMsg(res.message, "ok");
+  else if (res.error) setMsg(res.error, "err");
+  loadStatus();
+}
+
+async function commit() {
+  const res = await api("api/commit", { message: $("commitMsg").value });
+  setMsg(res.ok ? "コミットしました: " + res.message : res.error, res.ok ? "ok" : "err");
+  loadStatus();
+}
+
+$("date").valueAsDate = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+$("collect").addEventListener("click", collect);
+$("date").addEventListener("change", collect);
+$("showTrivial").addEventListener("change", () => { renderCommands(); refreshDraft(); });
+["incApt", "incConf", "incErr", "incVer"].forEach((id) => $(id).addEventListener("change", refreshDraft));
+["title", "summary", "pitfalls", "memo"].forEach((id) => $(id).addEventListener("input", refreshDraft));
+$("draft").addEventListener("input", () => {
+  draftEdited = true;
+  $("draftHint").textContent = "下書きを手で編集中のため、自動更新を止めています。「再生成」で作り直せます（手での編集は消えます）。";
+});
+$("regen").addEventListener("click", () => refreshDraft(true));
+$("save").addEventListener("click", save);
+$("commit").addEventListener("click", commit);
+collect();
+loadStatus();
+</script>
+</body>
+</html>
