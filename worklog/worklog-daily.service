@@ -1,0 +1,6 @@
+[Unit]
+Description=Worklog scheduled run (作業記録ワークフローの自動実行)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 %h/infra-notes/worklog/pipeline.py schedule

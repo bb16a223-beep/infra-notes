@@ -1,0 +1,60 @@
+# 作業記録ワークフローの定義（GitHub Actions の workflow ファイルに相当）
+#
+# - steps は上から順に評価される。needs に書いたステップがすべて成功すると実行される
+# - uses は pipeline.py の ACTIONS に登録されている処理の名前
+# - uses = "approval" のステップは、画面で承認されるまで「承認待ち」で止まる
+
+name = "作業記録"
+
+[on]
+# 毎日この時刻を過ぎたら、その日の分を自動実行する（タイマーは毎時動いて判定する）
+schedule = "23:00"
+
+[[steps]]
+id = "history"
+name = "コマンド履歴を集める"
+uses = "collect-history"
+
+[[steps]]
+id = "apt"
+name = "apt 履歴を集める"
+uses = "collect-apt"
+
+[[steps]]
+id = "errors"
+name = "エラーログを集める"
+uses = "collect-errors"
+
+[[steps]]
+id = "nginx"
+name = "Nginx 設定を記録する"
+uses = "collect-nginx"
+
+[[steps]]
+id = "versions"
+name = "環境を記録する"
+uses = "collect-versions"
+
+[[steps]]
+id = "draft"
+name = "下書きを作る"
+uses = "build-draft"
+needs = ["history", "apt", "errors", "nginx", "versions"]
+
+[[steps]]
+id = "approve"
+name = "承認"
+uses = "approval"
+needs = ["draft"]
+
+[[steps]]
+id = "append"
+name = "README に追記"
+uses = "append-readme"
+needs = ["approve"]
+
+[[steps]]
+id = "commit"
+name = "コミット"
+uses = "git-commit"
+needs = ["append"]

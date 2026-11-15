@@ -3,155 +3,166 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>作業記録まとめ</title>
+<title>作業記録ワークフロー</title>
 <style>
   :root {
-    --bg: #f6f7f9; --panel: #ffffff; --text: #1d2330; --muted: #677085;
-    --line: #dde1e8; --accent: #2f6fdb; --accent-text: #ffffff;
-    --ok: #1f8a4c; --err: #c23b3b; --code: #f0f2f5;
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1d2330; --muted: #677085; --line: #dde1e8;
+    --accent: #2f6fdb; --accent-text: #ffffff; --code: #f0f2f5;
+    --ok: #1f8a4c; --err: #c23b3b; --warn: #b7791f; --run: #2f6fdb; --off: #9aa1ae;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #14171c; --panel: #1c2027; --text: #e4e7ec; --muted: #949cad;
-      --line: #2e343e; --accent: #5b93f0; --accent-text: #0d1117;
-      --ok: #4cc283; --err: #f07a7a; --code: #252a33;
+      --bg: #14171c; --panel: #1c2027; --text: #e4e7ec; --muted: #949cad; --line: #2e343e;
+      --accent: #5b93f0; --accent-text: #0d1117; --code: #252a33;
+      --ok: #4cc283; --err: #f07a7a; --warn: #e0a84a; --run: #5b93f0; --off: #6b7280;
     }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
     font: 14px/1.6 system-ui, "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif; }
-  header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
-    padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
-  header h1 { font-size: 17px; margin: 0 auto 0 0; }
-  main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 20px; max-width: 1500px; margin: 0 auto; }
-  @media (max-width: 960px) { main { grid-template-columns: 1fr; } }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+    padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { font-size: 16px; margin: 0; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  header .spacer { flex: 1; }
+  main { max-width: 1200px; margin: 0 auto; padding: 16px 20px 40px; }
   section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
-  h2 { font-size: 14px; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
-  h2 .count { color: var(--muted); font-weight: normal; }
-  h2 label { margin-left: auto; font-weight: normal; color: var(--muted); font-size: 13px; }
-  .hint { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
+  h2 { font-size: 15px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  h3 { font-size: 13px; margin: 14px 0 6px; }
+  .hint { color: var(--muted); font-size: 12.5px; margin: 0 0 8px; }
+  .muted { color: var(--muted); }
   input[type=date], input[type=text], textarea {
-    font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
-    border-radius: 6px; padding: 6px 8px; width: 100%; }
-  input[type=date] { width: auto; }
-  textarea { resize: vertical; min-height: 70px; }
-  textarea.mono, pre, code, .cmd { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12.5px; }
-  #draft { min-height: 420px; }
+    font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+  input[type=text], textarea { width: 100%; }
+  textarea { resize: vertical; min-height: 80px; }
+  .mono, pre, code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12.5px; }
   button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--text);
-    border-radius: 6px; padding: 6px 14px; cursor: pointer; }
+    border-radius: 6px; padding: 6px 14px; cursor: pointer; white-space: nowrap; }
   button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  button.danger { color: var(--err); }
   button:disabled { opacity: .5; cursor: default; }
-  .list { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; }
-  .list label { display: flex; gap: 8px; align-items: baseline; padding: 3px 8px; border-bottom: 1px solid var(--line); }
-  .list label:last-child { border-bottom: 0; }
-  .list .time { color: var(--muted); font-size: 12px; min-width: 38px; }
-  .list .cmd { word-break: break-all; }
-  .list .trivial .cmd { color: var(--muted); }
-  pre { background: var(--code); border-radius: 6px; padding: 8px 10px; margin: 0; overflow: auto; max-height: 260px; white-space: pre-wrap; word-break: break-all; }
-  .empty { color: var(--muted); font-size: 13px; }
+  pre { background: var(--code); border-radius: 6px; padding: 8px 10px; margin: 0; overflow: auto; white-space: pre-wrap; word-break: break-all; }
   .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .row input[type=text] { flex: 1; min-width: 200px; }
-  .field { margin-bottom: 10px; }
+  #toast { position: fixed; right: 16px; bottom: 16px; max-width: min(420px, calc(100vw - 32px));
+    padding: 10px 14px; border-radius: 8px; background: var(--text); color: var(--bg); font-size: 13px; display: none; }
+  #toast.err { background: var(--err); color: #fff; }
+
+  /* 状態アイコン */
+  .st { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%;
+    font-size: 11px; font-weight: 700; flex: none; color: #fff; background: var(--off); }
+  .st.success { background: var(--ok); } .st.failure { background: var(--err); }
+  .st.waiting { background: var(--warn); } .st.running, .st.queued { background: var(--run); }
+  .st.pending { background: transparent; border: 2px solid var(--off); }
+  .label-success { color: var(--ok); } .label-failure { color: var(--err); } .label-waiting { color: var(--warn); }
+  .label-running { color: var(--run); } .label-neutral, .label-cancelled, .label-skipped, .label-pending { color: var(--muted); }
+
+  /* 一覧 */
+  .banner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border: 1px solid var(--warn); border-radius: 8px;
+    padding: 10px 14px; margin-bottom: 16px; background: var(--panel); }
+  .runs { list-style: none; margin: 0; padding: 0; }
+  .runs li { display: grid; grid-template-columns: 22px 1fr auto; gap: 4px 12px; align-items: center;
+    padding: 10px 6px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .runs li:last-child { border-bottom: 0; }
+  .runs li:hover { background: var(--bg); }
+  .runs .title { font-weight: 600; }
+  .runs .meta { grid-column: 2; color: var(--muted); font-size: 12.5px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .runs .dots { display: flex; gap: 3px; }
+  .runs .dots .st { width: 10px; height: 10px; font-size: 0; }
+  .runs .dots .st.pending { border-width: 1.5px; }
+  .runs .side { grid-row: 1 / span 2; grid-column: 3; text-align: right; }
+  .empty { color: var(--muted); padding: 10px 6px; }
+
+  /* グラフ */
+  .graph-wrap { overflow-x: auto; }
+  .graph { position: relative; display: flex; gap: 56px; padding: 8px 4px; min-width: max-content; align-items: center; }
+  .graph svg { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  .graph svg path { fill: none; stroke: var(--line); stroke-width: 2; }
+  .graph svg path.done { stroke: var(--ok); opacity: .55; }
+  .col { display: flex; flex-direction: column; gap: 12px; position: relative; z-index: 1; }
+  .node { display: flex; align-items: center; gap: 8px; width: 200px; padding: 8px 10px; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--panel); cursor: pointer; text-align: left; white-space: normal; }
+  .node:hover { border-color: var(--accent); }
+  .node.sel { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .node.waiting { border-color: var(--warn); }
+  .node.failure { border-color: var(--err); }
+  .node .nm { flex: 1; font-size: 13px; line-height: 1.35; }
+  .node .du { color: var(--muted); font-size: 11.5px; }
+  #log pre { max-height: 420px; }
+
+  /* 進捗 */
+  .stepper { display: flex; gap: 0; margin-bottom: 16px; overflow-x: auto; }
+  .stepper .stage { flex: 1; min-width: 110px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    position: relative; padding: 0 4px; font-size: 13px; color: var(--muted); background: none; border: 0; border-radius: 0; }
+  .stepper .stage::before { content: ""; position: absolute; top: 14px; left: -50%; width: 100%; height: 2px; background: var(--line); z-index: 0; }
+  .stepper .stage:first-child::before { display: none; }
+  .stepper .stage.done::before, .stepper .stage.current::before { background: var(--ok); }
+  .stepper .num { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--line); background: var(--panel); font-weight: 700; position: relative; z-index: 1; }
+  .stepper .done .num { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .stepper .current .num { border-color: var(--accent); color: var(--accent); }
+  .stepper .current { color: var(--text); font-weight: 600; }
+  .checklist { max-height: 340px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; }
+  .checklist label { display: flex; gap: 8px; align-items: baseline; padding: 3px 8px; border-bottom: 1px solid var(--line); }
+  .checklist label:last-child { border-bottom: 0; }
+  .checklist .time { color: var(--muted); font-size: 12px; min-width: 38px; }
+  .checklist .cmd { word-break: break-all; }
+  .checklist .trivial .cmd { color: var(--muted); }
+  .incs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px 16px; margin-top: 6px; }
+  .field { display: block; margin-bottom: 12px; }
   .field > span { display: block; font-weight: 600; font-size: 13px; margin-bottom: 4px; }
-  #msg { font-size: 13px; }
-  #msg.ok { color: var(--ok); } #msg.err { color: var(--err); }
-  details summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-top: 8px; }
-  table { border-collapse: collapse; width: 100%; font-size: 13px; }
-  td { border-bottom: 1px solid var(--line); padding: 3px 6px; }
-  td:last-child { font-family: ui-monospace, Consolas, monospace; }
+  #draft { min-height: 420px; }
+  .nav { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .steps-mini { list-style: none; margin: 0; padding: 0; }
+  .steps-mini li { display: flex; gap: 8px; align-items: center; padding: 4px 0; }
+  .warnbox { border: 1px solid var(--warn); border-radius: 6px; padding: 8px 10px; margin-top: 10px; font-size: 13px; }
 </style>
 </head>
 <body>
 <header>
-  <h1>作業記録まとめ</h1>
-  <input type="date" id="date" aria-label="日付">
-  <button class="primary" id="collect">収集</button>
-  <span id="msg" role="status"></span>
+  <h1><a href="#/" style="color:inherit">作業記録ワークフロー</a></h1>
+  <span class="sub" id="schedule"></span>
+  <span class="spacer"></span>
+  <input type="date" id="runDate" aria-label="実行する日付">
+  <button class="primary" id="runBtn">手動で実行</button>
 </header>
-
-<main>
-  <div>
-    <section>
-      <h2>実行したコマンド <span class="count" id="cmdCount"></span>
-        <label><input type="checkbox" id="showTrivial"> ls・cd なども表示</label></h2>
-      <p class="hint">チェックしたコマンドが下書きに入ります。</p>
-      <div class="list" id="cmds"></div>
-      <details id="undatedBox">
-        <summary>日時のない履歴（日時記録の設定前） <span id="undatedCount"></span></summary>
-        <p class="hint">日時が残っていないため、どの日の作業か判別できません。必要なものだけチェックしてください。</p>
-        <div class="list" id="undated"></div>
-      </details>
-    </section>
-
-    <section>
-      <h2>apt でのインストール・削除 <span class="count" id="aptCount"></span>
-        <label><input type="checkbox" id="incApt" checked> 下書きに入れる</label></h2>
-      <div id="apt"></div>
-    </section>
-
-    <section>
-      <h2>Nginx 設定 <label><input type="checkbox" id="incConf"> 下書きに入れる</label></h2>
-      <p class="hint" id="confPath"></p>
-      <pre id="conf"></pre>
-    </section>
-
-    <section>
-      <h2>エラーログ <span class="count" id="errCount"></span>
-        <label><input type="checkbox" id="incErr" checked> 下書きに入れる</label></h2>
-      <div id="errors"></div>
-    </section>
-
-    <section>
-      <h2>環境 <label><input type="checkbox" id="incVer" checked> 下書きに入れる</label></h2>
-      <table id="versions"></table>
-    </section>
-  </div>
-
-  <div>
-    <section>
-      <h2>まとめ</h2>
-      <label class="field"><span>タイトル</span>
-        <input type="text" id="title" placeholder="例: Nginx から Tomcat への負荷分散"></label>
-      <label class="field"><span>やったこと</span>
-        <textarea id="summary" placeholder="今日の作業の概要"></textarea></label>
-      <label class="field"><span>ハマった点</span>
-        <textarea id="pitfalls" placeholder="- upstream の server 行にセミコロンを付け忘れた"></textarea></label>
-      <label class="field"><span>考えたこと・メモ</span>
-        <textarea id="memo" placeholder="次に試したいこと、疑問点など"></textarea></label>
-    </section>
-
-    <section>
-      <h2>下書き（README.md に追記される内容）
-        <label><button id="regen" title="左の選択とまとめから作り直す">再生成</button></label></h2>
-      <p class="hint" id="draftHint">左の選択とまとめの入力に合わせて自動で更新されます。</p>
-      <textarea class="mono" id="draft" spellcheck="false"></textarea>
-      <div class="row" style="margin-top:10px">
-        <button class="primary" id="save">README に追記</button>
-      </div>
-    </section>
-
-    <section>
-      <h2>コミット</h2>
-      <div class="row">
-        <input type="text" id="commitMsg" placeholder="コミットメッセージ">
-        <button class="primary" id="commit">コミット</button>
-      </div>
-      <details open>
-        <summary>git の状態</summary>
-        <pre id="git"></pre>
-      </details>
-    </section>
-  </div>
-</main>
+<main id="app"></main>
+<div id="toast" role="status"></div>
 
 <script>
 const $ = (id) => document.getElementById(id);
-let data = null;
-let draftEdited = false;
+const app = $("app");
+let workflow = null;
 
-function setMsg(text, kind) {
-  $("msg").textContent = text;
-  $("msg").className = kind || "";
+const STATUS = {
+  success: ["✓", "成功"], failure: ["✕", "失敗"], waiting: ["Ⅱ", "承認待ち"], running: ["…", "実行中"],
+  queued: ["…", "待機中"], pending: ["", "未実行"], skipped: ["–", "スキップ"], cancelled: ["–", "キャンセル"],
+  neutral: ["–", "作業なし"],
+};
+const TRIGGER = { schedule: "自動", manual: "手動" };
+
+function h(tag, props = {}, ...children) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k in e) e[k] = v;
+    else e.setAttribute(k, v);
+  }
+  for (const c of children.flat()) if (c !== null && c !== undefined && c !== false) e.append(c);
+  return e;
+}
+const icon = (s) => h("span", { class: `st ${s}`, title: STATUS[s]?.[1] || s }, STATUS[s]?.[0] || "");
+const label = (s) => h("span", { class: `label-${s}` }, STATUS[s]?.[1] || s);
+
+function toast(msg, isErr) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = isErr ? "err" : "";
+  t.style.display = "block";
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => (t.style.display = "none"), 4000);
 }
 
 async function api(path, body) {
@@ -162,184 +173,358 @@ async function api(path, body) {
   };
   const res = await fetch(path, opt);  // 相対パス: /worklog/ 配下でもそのまま動く
   const json = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-  return { status: res.status, ...json };
+  if (!res.ok) { const e = new Error(json.error || `HTTP ${res.status}`); e.status = res.status; throw e; }
+  return json;
 }
 
-function el(tag, props = {}, children = []) {
-  const e = Object.assign(document.createElement(tag), props);
-  for (const c of children) e.append(c);
-  return e;
+function dur(a, b) {
+  if (!a) return "";
+  const s = Math.max(0, Math.round(((b ? new Date(b) : new Date()) - new Date(a)) / 1000));
+  if (s < 60) return `${s}秒`;
+  if (s < 3600) return `${Math.floor(s / 60)}分${s % 60 ? (s % 60) + "秒" : ""}`;
+  return `${Math.floor(s / 3600)}時間${Math.floor((s % 3600) / 60)}分`;
+}
+const fmt = (iso) => iso ? iso.replace("T", " ").slice(5, 16) : "";
+const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
+// ---------- 実行一覧 ----------
+
+async function viewList() {
+  const runs = await api("api/runs");
+  const waiting = runs.filter((r) => r.status === "waiting");
+  app.replaceChildren(
+    waiting.length ? h("div", { class: "banner" },
+      icon("waiting"),
+      h("span", {}, `承認待ちが ${waiting.length} 件あります`),
+      h("span", { class: "spacer", style: "flex:1" }),
+      h("button", { class: "primary", onclick: () => (location.hash = `#/runs/${waiting[waiting.length - 1].id}/progress`) },
+        `${waiting[waiting.length - 1].date} を進める`)) : null,
+    h("section", {},
+      h("h2", {}, "実行一覧", h("span", { class: "muted", style: "font-weight:normal;font-size:13px" }, `${runs.length} 件`)),
+      runs.length ? h("ul", { class: "runs" }, runs.map(runRow)) :
+        h("p", { class: "empty" }, "まだ実行されていません。右上の「手動で実行」で試せます。"))
+  );
 }
 
-function cmdRow(item, checked) {
-  const box = el("input", { type: "checkbox", checked });
-  box.dataset.cmd = item.cmd;
-  box.addEventListener("change", refreshDraft);
-  return el("label", { className: item.trivial ? "trivial" : "" }, [
-    box,
-    el("span", { className: "time", textContent: item.time || "" }),
-    el("span", { className: "cmd", textContent: item.cmd }),
-  ]);
+function runRow(r) {
+  const go = () => (location.hash = r.status === "waiting" ? `#/runs/${r.id}/progress` : `#/runs/${r.id}`);
+  return h("li", { onclick: go },
+    icon(r.status),
+    h("div", { class: "title" }, `${r.date} の作業記録`, " ", h("span", { class: "muted", style: "font-weight:normal" }, `#${r.id}`)),
+    h("div", { class: "side" },
+      r.status === "waiting" ? h("button", { class: "primary", onclick: (e) => { e.stopPropagation(); go(); } }, "進める") : label(r.status)),
+    h("div", { class: "meta" },
+      h("span", {}, `${TRIGGER[r.trigger] || r.trigger}実行`),
+      h("span", {}, fmt(r.created)),
+      r.finished ? h("span", {}, dur(r.started, r.finished)) : null,
+      h("span", { class: "dots" }, r.steps.map((s) => icon(s.status)))));
 }
 
-function renderCommands() {
-  const showTrivial = $("showTrivial").checked;
-  const list = $("cmds");
-  list.replaceChildren();
-  const items = data.commands.filter((c) => showTrivial || !c.trivial);
-  $("cmdCount").textContent = `${data.commands.length} 件`;
-  if (!items.length) {
-    list.append(el("p", { className: "empty", textContent: "この日の日時付き履歴はありません。", style: "padding:6px 8px;margin:0" }));
+// ---------- 実行の詳細（グラフ） ----------
+
+function levels(steps) {
+  const lv = {};
+  for (const s of steps) lv[s.id] = s.needs.length ? Math.max(...s.needs.map((n) => lv[n])) + 1 : 0;
+  const cols = [];
+  for (const s of steps) (cols[lv[s.id]] ||= []).push(s);
+  return cols;
+}
+
+async function viewRun(id) {
+  const run = await api(`api/runs/${id}`);
+  const pick = run.steps.find((s) => s.status === "failure") || run.steps.find((s) => s.status === "waiting") ||
+    [...run.steps].reverse().find((s) => s.status !== "pending" && s.status !== "skipped") || run.steps[0];
+  let selected = pick.id;
+
+  const nodes = {};
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  const graph = h("div", { class: "graph" }, svg,
+    levels(run.steps).map((col) => h("div", { class: "col" }, col.map((s) => {
+      nodes[s.id] = h("button", { class: `node ${s.status}`, onclick: () => select(s.id) },
+        icon(s.status),
+        h("span", { class: "nm" }, s.name, s.status === "waiting" ? h("div", { class: "du label-waiting" }, "承認待ち") : null),
+        h("span", { class: "du" }, s.finished ? dur(s.started, s.finished) : ""));
+      return nodes[s.id];
+    }))));
+  const logBox = h("section", { id: "log" });
+
+  function select(sid) {
+    selected = sid;
+    for (const [k, n] of Object.entries(nodes)) n.classList.toggle("sel", k === sid);
+    const s = run.steps.find((x) => x.id === sid);
+    logBox.replaceChildren(
+      h("h2", {}, icon(s.status), s.name, label(s.status),
+        h("span", { class: "muted", style: "font-weight:normal;font-size:12.5px" },
+          s.started ? `${fmt(s.started)} 開始` : "", s.finished ? ` ・ ${dur(s.started, s.finished)}` : "")),
+      h("p", { class: "hint" }, `uses: ${s.uses}` + (s.needs.length ? ` ・ needs: ${s.needs.join(", ")}` : "")),
+      s.log.length ? h("pre", {}, s.log.join("\n")) : h("p", { class: "muted" }, "ログはありません。"),
+      s.status === "waiting" ? h("div", { class: "row", style: "margin-top:10px" },
+        h("button", { class: "primary", onclick: () => (location.hash = `#/runs/${run.id}/progress`) }, "進捗画面で承認へ")) : null);
   }
-  items.forEach((c) => list.append(cmdRow(c, !c.trivial)));
 
-  const und = $("undated");
-  und.replaceChildren();
-  const undItems = data.undated.filter((c) => showTrivial || !c.trivial);
-  $("undatedCount").textContent = `(${data.undated.length} 件)`;
-  $("undatedBox").hidden = !data.undated.length;
-  undItems.forEach((c) => und.append(cmdRow(c, false)));
-}
-
-function renderApt() {
-  const box = $("apt");
-  box.replaceChildren();
-  $("aptCount").textContent = `${data.apt.length} 件`;
-  if (!data.apt.length) {
-    box.append(el("p", { className: "empty", textContent: "この日の apt 履歴はありません。" }));
-    return;
-  }
-  const pre = el("pre", { textContent: aptLines().join("\n") });
-  box.append(pre);
-}
-
-function aptLines() {
-  const lines = [];
-  for (const ev of data.apt) {
-    lines.push(`${ev.time}  ${ev.command}`);
-    for (const [key, label] of [["install", "インストール"], ["remove", "削除"], ["purge", "完全削除"]]) {
-      const x = ev[key];
-      if (!x) continue;
-      const names = x.packages.map((p) => `${p.name} ${p.version}`).join(", ");
-      const auto = x.automatic ? `（依存 ${x.automatic} 件）` : "";
-      lines.push(`  ${label}: ${names || "-"}${auto}`);
+  function drawLines() {
+    const base = graph.getBoundingClientRect();
+    svg.setAttribute("width", graph.scrollWidth);
+    svg.setAttribute("height", graph.scrollHeight);
+    svg.replaceChildren();
+    for (const s of run.steps) for (const n of s.needs) {
+      const a = nodes[n].getBoundingClientRect(), b = nodes[s.id].getBoundingClientRect();
+      const x1 = a.right - base.left, y1 = a.top + a.height / 2 - base.top;
+      const x2 = b.left - base.left, y2 = b.top + b.height / 2 - base.top;
+      const mx = (x1 + x2) / 2;
+      const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      p.setAttribute("d", `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+      const done = run.steps.find((x) => x.id === n).status === "success" && s.status !== "pending" && s.status !== "skipped";
+      if (done) p.setAttribute("class", "done");
+      svg.append(p);
     }
-    if (ev.upgrade) lines.push(`  アップグレード: ${ev.upgrade} 件`);
   }
-  return lines;
-}
 
-function renderRest() {
-  $("confPath").textContent = data.nginx.error ? `${data.nginx.path} を読めません: ${data.nginx.error}` : `${data.nginx.path}（コメントと空行を除く）`;
-  $("conf").textContent = data.nginx.content;
+  app.replaceChildren(
+    h("p", {}, h("a", { href: "#/" }, "← 実行一覧")),
+    h("section", {},
+      h("h2", {}, icon(run.status), `${run.date} の作業記録`, h("span", { class: "muted", style: "font-weight:normal" }, `#${run.id}`), label(run.status)),
+      h("p", { class: "hint" },
+        `${TRIGGER[run.trigger] || run.trigger}実行 ・ ${fmt(run.created)} 開始` + (run.finished ? ` ・ 所要 ${dur(run.started, run.finished)}` : "")),
+      h("div", { class: "row" },
+        run.status === "waiting" ? h("button", { class: "primary", onclick: () => (location.hash = `#/runs/${run.id}/progress`) }, "進捗画面へ") : null,
+        run.status === "failure" ? h("button", { class: "primary", onclick: rerun }, "失敗したステップを再実行") : null),
+      h("div", { class: "graph-wrap", style: "margin-top:12px" }, graph)),
+    logBox);
 
-  const errs = $("errors");
-  errs.replaceChildren();
-  const n = data.errors.nginx.length + data.errors.tomcat.length;
-  $("errCount").textContent = `${n} 件`;
-  if (!n) errs.append(el("p", { className: "empty", textContent: "この日のエラーはありません。" }));
-  if (data.errors.nginx.length) errs.append(el("p", { className: "hint", textContent: "Nginx (/var/log/nginx/error.log)" }), el("pre", { textContent: data.errors.nginx.join("\n") }));
-  if (data.errors.tomcat.length) errs.append(el("p", { className: "hint", textContent: "Tomcat (journalctl -u tomcat10)" }), el("pre", { textContent: data.errors.tomcat.join("\n") }));
-
-  const t = $("versions");
-  t.replaceChildren();
-  data.versions.forEach((v) => t.append(el("tr", {}, [el("td", { textContent: v.name }), el("td", { textContent: v.version })])));
-}
-
-function selectedCommands() {
-  const out = [];
-  document.querySelectorAll("#cmds input:checked, #undated input:checked").forEach((b) => {
-    if (out[out.length - 1] !== b.dataset.cmd) out.push(b.dataset.cmd);
-  });
-  return out;
-}
-
-function buildDraft() {
-  if (!data) return "";
-  const parts = [];
-  const title = $("title").value.trim();
-  parts.push(`### ${data.date}${title ? " " + title : ""}`);
-  const block = (heading, body) => { if (body.trim()) parts.push(`#### ${heading}\n\n${body.trim()}`); };
-
-  block("やったこと", $("summary").value);
-  const cmds = selectedCommands();
-  if (cmds.length) block("実行したコマンド", "```bash\n" + cmds.join("\n") + "\n```");
-  if ($("incApt").checked && data.apt.length) block("apt でのインストール・削除", "```\n" + aptLines().join("\n") + "\n```");
-  if ($("incConf").checked && data.nginx.content) block("Nginx 設定", `\`${data.nginx.path}\`\n\n\`\`\`nginx\n${data.nginx.content}\n\`\`\``);
-  block("ハマった点", $("pitfalls").value);
-  block("考えたこと・メモ", $("memo").value);
-  if ($("incErr").checked) {
-    const logs = [...data.errors.nginx, ...data.errors.tomcat];
-    if (logs.length) block("エラーログ", "```\n" + logs.join("\n") + "\n```");
+  async function rerun() {
+    try { await api(`api/runs/${run.id}/rerun`, {}); toast("再実行しました"); render(); }
+    catch (e) { toast(e.message, true); }
   }
-  if ($("incVer").checked && data.versions.length) {
-    block("環境", "| 項目 | バージョン |\n| --- | --- |\n" + data.versions.map((v) => `| ${v.name} | ${v.version} |`).join("\n"));
+
+  select(selected);
+  requestAnimationFrame(drawLines);
+  window.onresize = drawLines;
+}
+
+// ---------- 進捗（ステップを順に進める） ----------
+
+const STAGES = ["収集", "選ぶ", "書く", "確認", "追記・コミット"];
+
+async function viewProgress(id) {
+  const run = await api(`api/runs/${id}`);
+  const o = run.outputs || {};
+  const waiting = run.status === "waiting";
+  const inputs = Object.assign({ title: "", summary: "", pitfalls: "", memo: "", commands: [], include: {} }, run.inputs || {});
+  let stage = waiting ? 1 : 4;
+  let markdown = run.draft || "";
+  let edited = false;
+  let force = false;
+
+  const collectSteps = run.steps.filter((s) => s.uses.startsWith("collect-") || s.uses === "build-draft");
+  const stepper = h("div", { class: "stepper" });
+  const body = h("section", {});
+
+  async function persist() {
+    if (!waiting) return;
+    try { await api(`api/runs/${run.id}/inputs`, { inputs }); } catch (e) { toast("入力の保存に失敗しました: " + e.message, true); }
   }
-  return parts.join("\n\n") + "\n";
+  async function go(n) {
+    if (n === 3 && !edited) {
+      try { markdown = (await api(`api/runs/${run.id}/preview`, { inputs })).markdown; }
+      catch (e) { toast(e.message, true); return; }
+    }
+    await persist();
+    stage = n;
+    draw();
+  }
+  const nav = (back, next, nextLabel = "次へ →") => h("div", { class: "nav" },
+    back !== null ? h("button", { onclick: () => go(back) }, "← 戻る") : h("span"),
+    next !== null ? h("button", { class: "primary", onclick: () => go(next) }, nextLabel) : h("span"));
+
+  function drawStepper() {
+    stepper.replaceChildren(...STAGES.map((name, i) => h("button", {
+      class: `stage ${i < stage || !waiting ? "done" : ""} ${i === stage && waiting ? "current" : ""}`,
+      disabled: !waiting || i === 0,
+      onclick: () => i > 0 && go(i),
+    }, h("span", { class: "num" }, i < stage || !waiting ? "✓" : String(i + 1)), h("span", {}, name))));
+  }
+
+  function stageCollect() {
+    return [
+      h("h2", {}, "① 収集"),
+      h("p", { class: "hint" }, "自動で実行されたステップです。ログは実行の詳細画面で見られます。"),
+      h("ul", { class: "steps-mini" }, collectSteps.map((s) => h("li", {}, icon(s.status), s.name, label(s.status)))),
+    ];
+  }
+
+  function cmdItem(c, checkedSet) {
+    const box = h("input", { type: "checkbox", checked: checkedSet.has(c.cmd) });
+    box.addEventListener("change", () => {
+      const set = new Set(inputs.commands);
+      box.checked ? set.add(c.cmd) : set.delete(c.cmd);
+      inputs.commands = allCmds.map((x) => x.cmd).filter((x, i, a) => set.has(x) && a.indexOf(x) === i);
+      edited = false;
+    });
+    return h("label", { class: c.trivial ? "trivial" : "" }, box,
+      h("span", { class: "time" }, c.time || ""), h("span", { class: "cmd mono" }, c.cmd));
+  }
+  const hist = o.history || { commands: [], undated: [] };
+  const allCmds = [...hist.commands, ...hist.undated];
+
+  function stageSelect() {
+    const set = new Set(inputs.commands);
+    const showTrivial = h("input", { type: "checkbox" });
+    const list = h("div", { class: "checklist" });
+    const und = h("div", { class: "checklist" });
+    const fill = () => {
+      const f = (c) => showTrivial.checked || !c.trivial || set.has(c.cmd);
+      list.replaceChildren(...(hist.commands.filter(f).map((c) => cmdItem(c, set))));
+      if (!list.children.length) list.append(h("p", { class: "empty" }, "この日の日時付き履歴はありません。"));
+      und.replaceChildren(...(hist.undated.filter(f).map((c) => cmdItem(c, set))));
+    };
+    showTrivial.addEventListener("change", fill);
+    fill();
+    const inc = (key, text, n) => {
+      const b = h("input", { type: "checkbox", checked: !!inputs.include[key], disabled: !n });
+      b.addEventListener("change", () => { inputs.include[key] = b.checked; edited = false; });
+      return h("label", {}, b, ` ${text}`, h("span", { class: "muted" }, n ? `（${n} 件）` : "（なし）"));
+    };
+    const er = o.errors || { nginx: [], tomcat: [] };
+    const ng = o.nginx || {};
+    return [
+      h("h2", {}, "② 下書きに入れるものを選ぶ"),
+      h("h3", {}, "実行したコマンド ", h("label", { class: "muted", style: "font-weight:normal" }, showTrivial, " ls・cd なども表示")),
+      list,
+      hist.undated.length ? h("details", {}, h("summary", { class: "muted", style: "cursor:pointer;margin-top:8px" },
+        `日時のない古い履歴（${hist.undated.length} 件）`), h("p", { class: "hint" }, "日時を記録する設定より前の履歴です。必要なものだけ選んでください。"), und) : null,
+      h("h3", {}, "そのほか"),
+      h("div", { class: "incs" },
+        inc("apt", "apt でのインストール・削除", (o.apt?.events || []).length),
+        inc("nginx", ng.diff ? "Nginx 設定の変更（差分）" : "Nginx 設定（全体）", ng.content ? 1 : 0),
+        inc("errors", "エラーログ", er.nginx.length + er.tomcat.length),
+        inc("versions", "環境（バージョン）", (o.versions?.rows || []).length)),
+      nav(null, 2),
+    ];
+  }
+
+  function stageWrite() {
+    const field = (key, text, ph, rows) => {
+      const el = rows ? h("textarea", { rows, placeholder: ph, value: inputs[key] }) : h("input", { type: "text", placeholder: ph, value: inputs[key] });
+      el.addEventListener("input", () => { inputs[key] = el.value; edited = false; });
+      return h("label", { class: "field" }, h("span", {}, text), el);
+    };
+    return [
+      h("h2", {}, "③ まとめを書く"),
+      field("title", "タイトル", "例: Nginx から Tomcat への負荷分散"),
+      field("summary", "やったこと", "今日の作業の概要", 3),
+      field("pitfalls", "ハマった点", "- upstream の server 行にセミコロンを付け忘れた", 4),
+      field("memo", "考えたこと・メモ", "次に試したいこと、疑問点など", 3),
+      nav(1, 3),
+    ];
+  }
+
+  function stageReview() {
+    const ta = h("textarea", { id: "draft", class: "mono", spellcheck: false, value: markdown });
+    const hint = h("p", { class: "hint" }, edited ? "手で編集した内容を表示しています。" : "README.md の末尾に、この内容が追記されます。直接編集もできます。");
+    ta.addEventListener("input", () => { markdown = ta.value; edited = true; hint.textContent = "手で編集中です。②・③ を変えても、ここは上書きされません。"; });
+    const regen = h("button", { onclick: async () => { edited = false; await go(3); } }, "②・③ から作り直す");
+    return [
+      h("h2", {}, "④ 下書きを確認する", h("span", { style: "flex:1" }), regen),
+      hint, ta,
+      nav(2, 4),
+    ];
+  }
+
+  function stageApprove() {
+    const forceBox = h("input", { type: "checkbox", checked: force });
+    forceBox.addEventListener("change", () => (force = forceBox.checked));
+    const approveBtn = h("button", { class: "primary", onclick: approve }, "承認して README に追記・コミット");
+    async function approve() {
+      approveBtn.disabled = true;
+      try {
+        const r = await api(`api/runs/${run.id}/approve`, { inputs, markdown, force });
+        toast(r.status === "success" ? "README に追記してコミットしました" : `結果: ${STATUS[r.status]?.[1] || r.status}`, r.status !== "success");
+        location.hash = `#/runs/${run.id}`;
+      } catch (e) {
+        toast(e.message, true);
+        approveBtn.disabled = false;
+      }
+    }
+    async function cancel() {
+      if (!confirm("この日の記録をキャンセルしますか？ README には何も追記されません。")) return;
+      try { await api(`api/runs/${run.id}/cancel`, {}); location.hash = `#/runs/${run.id}`; }
+      catch (e) { toast(e.message, true); }
+    }
+    const after = run.steps.filter((s) => s.uses === "append-readme" || s.uses === "git-commit");
+    return [
+      h("h2", {}, "⑤ 承認して追記・コミット"),
+      h("p", {}, "承認すると、次のステップが自動で実行されます。"),
+      h("ul", { class: "steps-mini" }, after.map((s) => h("li", {}, icon(s.status), s.name))),
+      run.readme_has_date ? h("div", { class: "warnbox" },
+        `README にはすでに ${run.date} の記録があります。`, h("br"),
+        h("label", {}, forceBox, " 重複してもよいので追記する")) : null,
+      h("div", { class: "nav" },
+        h("button", { onclick: () => go(3) }, "← 戻る"),
+        h("div", { class: "row" }, h("button", { class: "danger", onclick: cancel }, "キャンセル"), approveBtn)),
+    ];
+  }
+
+  function stageDone() {
+    return [
+      h("h2", {}, icon(run.status), "この実行は終わっています", label(run.status)),
+      h("p", {}, "進められるのは「承認待ち」の実行だけです。"),
+      h("ul", { class: "steps-mini" }, run.steps.map((s) => h("li", {}, icon(s.status), s.name, label(s.status)))),
+      h("div", { class: "nav" }, h("a", { href: `#/runs/${run.id}` }, "実行の詳細を見る →")),
+    ];
+  }
+
+  function draw() {
+    drawStepper();
+    const views = [stageCollect, stageSelect, stageWrite, stageReview, stageApprove];
+    body.replaceChildren(...(waiting ? (stage === 0 ? stageCollect() : views[stage]()) : stageDone()));
+    window.scrollTo({ top: 0 });
+  }
+
+  app.replaceChildren(
+    h("p", {}, h("a", { href: "#/" }, "← 実行一覧"), " ・ ", h("a", { href: `#/runs/${run.id}` }, "実行の詳細（グラフ）")),
+    h("section", {},
+      h("h2", {}, icon(run.status), `${run.date} の作業記録を進める`, h("span", { class: "muted", style: "font-weight:normal" }, `#${run.id}`)),
+      stepper),
+    waiting ? h("section", {}, stageCollect()) : null,
+    body);
+  draw();
 }
 
-function refreshDraft(force) {
-  if (draftEdited && force !== true) return;
-  $("draft").value = buildDraft();
-  draftEdited = false;
-  $("draftHint").textContent = "左の選択とまとめの入力に合わせて自動で更新されます。";
-}
+// ---------- ルーティング ----------
 
-async function loadStatus() {
-  const s = await api("api/status");
-  $("git").textContent = (s.status ? "変更あり:\n" + s.status + "\n" : "変更なし\n\n") + "最近のコミット:\n" + s.log;
-}
-
-async function collect() {
-  setMsg("収集中…");
-  $("collect").disabled = true;
+async function render() {
+  window.onresize = null;
+  const m = location.hash.match(/^#\/runs\/(\d+)(\/progress)?$/);
   try {
-    const res = await api(`api/collect?date=${encodeURIComponent($("date").value)}`);
-    if (res.error) throw new Error(res.error);
-    data = res;
-    renderCommands(); renderApt(); renderRest();
-    refreshDraft(true);
-    if (!$("commitMsg").value) $("commitMsg").value = `Add worklog for ${data.date}`;
-    setMsg(`${data.date} の情報を集めました`, "ok");
+    if (m && m[2]) await viewProgress(m[1]);
+    else if (m) await viewRun(m[1]);
+    else await viewList();
   } catch (e) {
-    setMsg("収集に失敗しました: " + e.message, "err");
+    app.replaceChildren(h("section", {}, h("h2", {}, "読み込めませんでした"), h("p", {}, e.message), h("a", { href: "#/" }, "← 実行一覧")));
+  }
+}
+
+$("runDate").value = today();
+$("runBtn").addEventListener("click", async () => {
+  $("runBtn").disabled = true;
+  try {
+    const run = await api("api/runs", { date: $("runDate").value });
+    toast(`#${run.id} を実行しました: ${STATUS[run.status]?.[1] || run.status}`);
+    const next = run.status === "waiting" ? `#/runs/${run.id}/progress` : `#/runs/${run.id}`;
+    if (location.hash === next) render(); else location.hash = next;
+  } catch (e) {
+    toast(e.message, true);
   } finally {
-    $("collect").disabled = false;
+    $("runBtn").disabled = false;
   }
-}
-
-async function save() {
-  const markdown = $("draft").value;
-  let res = await api("api/save", { date: data.date, markdown });
-  if (res.status === 409 && confirm(res.error + "\nそれでも追記しますか？")) {
-    res = await api("api/save", { date: data.date, markdown, force: true });
-  }
-  if (res.ok) setMsg(res.message, "ok");
-  else if (res.error) setMsg(res.error, "err");
-  loadStatus();
-}
-
-async function commit() {
-  const res = await api("api/commit", { message: $("commitMsg").value });
-  setMsg(res.ok ? "コミットしました: " + res.message : res.error, res.ok ? "ok" : "err");
-  loadStatus();
-}
-
-$("date").valueAsDate = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
-$("collect").addEventListener("click", collect);
-$("date").addEventListener("change", collect);
-$("showTrivial").addEventListener("change", () => { renderCommands(); refreshDraft(); });
-["incApt", "incConf", "incErr", "incVer"].forEach((id) => $(id).addEventListener("change", refreshDraft));
-["title", "summary", "pitfalls", "memo"].forEach((id) => $(id).addEventListener("input", refreshDraft));
-$("draft").addEventListener("input", () => {
-  draftEdited = true;
-  $("draftHint").textContent = "下書きを手で編集中のため、自動更新を止めています。「再生成」で作り直せます（手での編集は消えます）。";
 });
-$("regen").addEventListener("click", () => refreshDraft(true));
-$("save").addEventListener("click", save);
-$("commit").addEventListener("click", commit);
-collect();
-loadStatus();
+window.addEventListener("hashchange", render);
+api("api/workflow").then((wf) => {
+  workflow = wf;
+  $("schedule").textContent = wf.schedule ? `毎日 ${wf.schedule} に自動実行` : "";
+}).catch(() => {});
+render();
 </script>
 </body>
 </html>
