@@ -315,3 +315,147 @@ server {
 | tomcat-jakartaee-migration | 1.0.10-2 |
 | tomcat10 | 10.1.55-1ubuntu2~26.04.1 |
 | tomcat10-common | 10.1.55-1ubuntu2~26.04.1 |
+
+### 2026-11-15（続き） GitHub への push、アクセスログ集計、Flask + Docker
+
+#### やったこと
+
+1. このリポジトリを GitHub に push した
+2. Nginx のアクセスログからステータスコードごとの件数を数えるスクリプトを書いた
+3. Flask アプリを作り、gunicorn で動かして Nginx から転送した
+4. 同じ Flask アプリを Docker イメージにして、コンテナで動かした
+
+#### 1. GitHub に push
+
+GitHub 側で空のリポジトリ `infra-notes` を作ってから実行する。
+
+```bash
+git branch -M main
+git remote add origin https://github.com/<ユーザー名>/infra-notes.git
+git push -u origin main
+```
+
+2 回目以降は `git push` だけでよい。
+
+#### 2. アクセスログのステータスコード集計
+
+`scripts/count_status.py`
+
+```python
+import sys
+from collections import Counter
+
+counts = Counter()
+for line in open(sys.argv[1]):
+    parts = line.split('"')
+    if len(parts) < 3:
+        continue
+    status = parts[2].split()[0]
+    counts[status] += 1
+
+for status, n in sorted(counts.items()):
+    print(status, n)
+```
+
+アクセスログは `www-data` 所有で読めないので、コピーして所有者を自分に変えてから使う。
+
+```bash
+cp /var/log/nginx/access.log ./access.log
+sudo chown $USER access.log
+python3 count_status.py access.log
+```
+
+```
+200 77
+```
+
+ログの 1 行は `... "GET / HTTP/1.1" 200 911 ...` の形なので、`"` で区切った 3 つ目の先頭がステータスコードになる。
+
+#### 3. Flask + gunicorn + Nginx
+
+```bash
+sudo apt install -y python3-venv
+cd ~/infra-notes/flask-app
+python3 -m venv .venv
+source .venv/bin/activate
+pip install flask gunicorn
+```
+
+`flask-app/app.py`
+
+```python
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+    return "Hellow from Flask\n"
+```
+
+開発用サーバーで確認したあと、gunicorn で動かす。
+
+```bash
+flask run --port 5000
+gunicorn -w 2 -b 127.0.0.1:5000 app:app
+curl http://localhost:5000
+```
+
+Nginx の `location /` の転送先を Tomcat から gunicorn に変えた。
+
+```nginx
+	location / {
+		proxy_pass http://127.0.0.1:5000;
+	}
+```
+
+```bash
+sudo nginx -t
+sudo service nginx reload
+curl http://localhost
+```
+
+`.venv/` は `.gitignore` に入れてコミットしない。
+
+#### 4. Docker でコンテナ化
+
+`flask-app/requirements.txt`
+
+```
+flask
+gunicorn
+```
+
+`flask-app/Dockerfile`
+
+```dockerfile
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY app.py .
+CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5000", "app:app"]
+```
+
+コンテナの中では `0.0.0.0` で待ち受けないと、外（ホスト）から届かない。ホストの 5001 番をコンテナの 5000 番につなぐ。
+
+```bash
+sudo docker build -t flask-app .
+sudo docker run -d -p 5001:5000 --name flask1 flask-app
+curl http://localhost:5001
+```
+
+#### ハマった点
+
+- `docker build -t flack-app` と打って、最後の `.`（ビルドに使うディレクトリ）を忘れた。`docker build` には場所の指定が必須
+- イメージ名を `flack-app` とタイプミスしたまま、`docker run ... flask-app` で起動しようとした。ビルド時と起動時のイメージ名は完全に一致させる
+- Nginx の転送先を 5000 番に変えたとき、`location /worklog/` の `proxy_pass` まで `5000` に変わってしまい、作業記録ツールの画面に Flask の応答が返るようになった。設定を置換で書き換えたら、`nginx -t` の前に変更箇所を `diff` で確認する
+
+```bash
+diff /etc/nginx/sites-available/default.bak /etc/nginx/sites-available/default
+```
+
+#### メモ
+
+- コンテナを同じ名前で作り直すときは、先に古いコンテナを消す: `sudo docker rm -f flask1`
+- upstream `tomcats` は残っているが、今はどこからも使っていない
