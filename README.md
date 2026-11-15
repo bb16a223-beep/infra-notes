@@ -231,3 +231,87 @@ sudo systemctl restart tomcat10
 sudo tail -f /var/log/nginx/error.log
 sudo journalctl -u tomcat10 -f
 ```
+
+## 作業記録
+
+### 2026-11-15 NginxからTomcaで負荷分散
+
+#### 実行したコマンド
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+curl -I http://localhost/worklog
+curl -I http://localhost/worklog/
+sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default .bak
+sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
+sudo sed -i '/^\s*location \/ {/i\
+\tlocation /worklog/ {\
+\t\tallow 127.0.0.1;\
+\t\tallow ::1;\
+\t\tdeny all;\
+\t\tproxy_pass http://127.0.0.1:8090/;\
+\t\tproxy_set_header Host $host;\
+\t}\
+' /etc/nginx/sites-available/default
+grep -n -B1 -A8 "location /worklog/" /etc/nginx/sites-available/default
+curl -I http://localhost/worklog/
+sudo nginx -t
+curl -I http://localhost/worklog
+sudo systemctl reload nginx.service
+curl -I http://localhost/worklg
+curl -I http://localhost/worklog
+```
+
+#### Nginx 設定
+
+`/etc/nginx/sites-available/default`
+
+```nginx
+upstream tomcats {
+	server 127.0.0.1:8080;
+	server 127.0.0.1:8081;
+}
+server {
+	listen 80 default_server;
+	listen [::]:80 default_server;
+	root /var/www/html;
+	index index.html index.htm index.nginx-debian.html;
+	server_name _;
+	location /worklog/ {
+		allow 127.0.0.1;
+		allow ::1;
+		deny all;
+		proxy_pass http://127.0.0.1:8090/;
+		proxy_set_header Host $host;
+	}
+	location / {
+		proxy_pass http://tomcats;
+	}
+}
+```
+
+#### ハマった点
+
+-upstream でserverのあとにコロンを忘れた
+
+#### エラーログ
+
+```
+2026-11-15T18:39:37+09:00 DesktopPC tomcat10[292]: WARNING: A restricted method in java.lang.System has been called
+2026-11-15T18:39:37+09:00 DesktopPC tomcat10[292]: WARNING: java.lang.System::load has been called by org.apache.tomcat.jni.Library in an unnamed module (file:/usr/share/java/tomcat10-jni-10.1.55.jar)
+2026-11-15T18:39:37+09:00 DesktopPC tomcat10[292]: WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+2026-11-15T18:39:37+09:00 DesktopPC tomcat10[292]: WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+```
+
+#### 環境
+
+| 項目 | バージョン |
+| --- | --- |
+| OS | Ubuntu 26.04.1 LTS |
+| nginx | 1.28.3-2ubuntu1.12 |
+| openjdk-25-jdk-headless | 25.0.5.0.3+1-1~26.04.1 |
+| openjdk-25-jre-headless | 25.0.5.0.3+1-1~26.04.1 |
+| tomcat-jakartaee-migration | 1.0.10-2 |
+| tomcat10 | 10.1.55-1ubuntu2~26.04.1 |
+| tomcat10-common | 10.1.55-1ubuntu2~26.04.1 |
