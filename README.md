@@ -459,3 +459,28 @@ diff /etc/nginx/sites-available/default.bak /etc/nginx/sites-available/default
 
 - コンテナを同じ名前で作り直すときは、先に古いコンテナを消す: `sudo docker rm -f flask1`
 - upstream `tomcats` は残っているが、今はどこからも使っていない
+
+## 用語のメモ(Web / アプリサーバの役割)
+
+### Nginx(Webサーバ)
+- 外からの通信を最初に受け取る(アプリサーバを直接晒さない＝安全性)
+- `proxy_pass`でTomcatやGunicornに渡す(リバースプロキシ)
+- `upstream`で複数台を並べると、ロードバランサにもなる(冗長性)
+- 画像、CSS、HTML、は、アプリを通さずにNginxが返す(負荷軽減）
+
+
+### 構成
+
+```
+
+Nginx → Tomcat → javaのアプリ
+Nginx → Gunicorn → Flask(Pythonのアプリ)
+```
+
+### アプリとフレームワーク
+- **Tomcat / Cosminexus**: Java用のアプリサーバ(Cosminexusは商用)
+- **Gunicorn**: Python用のアプリサーバ。リクエストを受けて、Flaskのアプリを呼び出し、結果を返す。
+- **Flask**: Pythonでウェブアプリを作るためのフレームワーク。URL毎に、動かす関数と返す内容を対応づける。
+- **フレームワーク**:ウェブアプリに必要な共通の部品をあらかじめ用意してくれる枠組み
+- TomcatとGunicornの違いは言語(Java / Python) と、機能の大きさ(Tomcatは多い、Gunicornは最小限)
+
