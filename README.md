@@ -498,3 +498,16 @@ Nginx → Gunicorn → Flask(Pythonのアプリ)
 - Flaskが起動しなかった: `app.py` の`from`を`form`と打ち間違えていた。`docker compose logs flask`で原因を特定
 - エラー500: SQLの`VALUES`　を　`VAULUES` と打ち間違えていた。ログで特定
 - エラー502: Flaskが落ちていたのが原因。`docker compose -a` で`Exited` を確認  
+
+## Docker Compose: Flask ２台　+ Nginx　負荷分散と停止試験
+
+- `docker compose up -d --scale flask-2` でFlaskを２台起動し、Nginxの`upstream`　で振り分け
+- `host:` (コンテナID)をレスポンスに出して、どちらが応答したか確認
+- 一台を`docker stop` しても、もう一台からの応答が続くことを確認(停止試験)
+
+### ハマった点
+
+- ６回だけアクセスすると、片側にしか行かないように見えた。ログにエラーがなく、２台ともにつながった
+- 原因は、Nginxのワーカー毎に振り分けの数え方が別だったこと。４０回アクセスすると両方に行くことで確認
+- `upstream` に`zone flask_app 64k;`　を足して、ワーカ間で数え方を共有し、交互に振り分けた
+- Compose内のコンテナ同士は、外側ポート(5001)でなく、中のポート(5000)でつなぐ

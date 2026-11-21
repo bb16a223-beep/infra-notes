@@ -1,4 +1,5 @@
-import os 
+import os
+import socket
 import psycopg2
 from flask import Flask
 
@@ -28,5 +29,6 @@ def index():
             cur.execute("SELECT count(*) FROM hits")
             n = cur.fetchone()[0]
     conn.close()
-    return f"Hello from Flask (hits: {n})\n"
+    return f"Hello from Flask (hits: {n}) host:{socket.gethostname()}\n"
+
 
