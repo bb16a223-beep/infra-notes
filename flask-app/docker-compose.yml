@@ -3,6 +3,8 @@ services:
   flask:
     build: .
     env_file: .env
+    deploy:
+      replicas: 2
     depends_on:
        - db
   nginx:
