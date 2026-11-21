@@ -484,3 +484,17 @@ Nginx → Gunicorn → Flask(Pythonのアプリ)
 - **フレームワーク**:ウェブアプリに必要な共通の部品をあらかじめ用意してくれる枠組み
 - TomcatとGunicornの違いは言語(Java / Python) と、機能の大きさ(Tomcatは多い、Gunicornは最小限)
 
+## Docker Compose: Nginx + Flask + PostgreSQL(三層)
+
+- `docker compose up -d ` でNginx / Flask(Gunicorn) / PostgreSQL を一コマンドで起動
+- DBパスワードは`.env` に分けて、`.gitignore`　で除外(Githubには上げていない)
+- DBのデータはvlume(`pgdata`)に保存。`docker compose down`　してもデータが残る(`-v` をつけると消える)
+- コンテナ同士は、サービス名(`flask`,`db`)で通信する
+
+
+### ハマった点
+
+- `docker compose` が入っていなかった: `apt install docker-compose-v2`で解決
+- Flaskが起動しなかった: `app.py` の`from`を`form`と打ち間違えていた。`docker compose logs flask`で原因を特定
+- エラー500: SQLの`VALUES`　を　`VAULUES` と打ち間違えていた。ログで特定
+- エラー502: Flaskが落ちていたのが原因。`docker compose -a` で`Exited` を確認  
