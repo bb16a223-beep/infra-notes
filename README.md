@@ -542,4 +542,78 @@ Nginx → Gunicorn → Flask(Pythonのアプリ)
 - 無料プランは
 - stateファイル(tfstate)と.terraform/をGitに入れない理由: 公開のリポジトリに環境の情報、秘密の情報が見えてしまうため。.terraform/はinitで再作成できるため。
 - .terraform.lock.hcl をGitに入れる理由:使うプロバイダーの名前とバージョンを固定して誰がinitしても同じバージョンを使うため。
+### やったこと
 
+- ssh-keygenで鍵を作り、Terraformでキーペアとセキュリティグループを作成
+- EC2を作成し、SSHで入ってDocker・Composeを導入
+- flask-appを転送し、docker composeでNginx・Flask×2・PostgreSQLを起動
+- 手元のPCから、EC2のパブリックIPの8000番にアクセスできることを確認
+
+### 手順
+
+- `ssh-keygen -t ed25519 -f ~/.ssh/terraform-lab` で鍵を作成（`-t` は鍵の種類、`-f` は保存先）
+- `main.tf` に、公開鍵をAWSに登録するブロックを追加
+
+```
+resource "aws_key_pair" "lab" {
+  key_name   = "terraform-lab"
+  public_key = file(pathexpand("~/.ssh/terraform-lab.pub"))
+}
+```
+
+- `main.tf` に、セキュリティグループを追加（SSHと8000番を、自分のIPだけに許可）
+
+```
+# IPを変数にして、terraform.tfvarsに分けた(gitに載せないため)
+resource "aws_security_group" "ssh" {
+  name        = "terraform-lab-ssh" # AWSコンソールに出てくるSGの名前
+  description = "SSH form my IP only" # 説明文
+
+  # 入ってくる通信のルール(SSH)
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.my_ip]
+  }
+
+  # 入ってくる通信のルール(nginx 8000番)
+  ingress {
+    description = "Flask app via nginx" # コンソールから見える説明
+    from_port   = 8000                  # ポートの番号の始まり
+    to_port     = 8000                  # ポートの番号の終わり
+    protocol    = "tcp"                 # 通信の種類
+    cidr_blocks = [var.my_ip]           # 誰からの通信を許可するのか。自分のIPだけ /32
+  }
+
+  # 出ていく通信のルール
+  # AWSコンソールで作るSGは、全部出ていけるルールがデフォルトで入るが、
+  # Terraformで作る場合は入らないため、明示的に記載する
+  egress {
+    from_port   = 0              # protocolが全部なので慣例的な目的での記載
+    to_port     = 0              # protocolが全部なので慣例的な目的での記載
+    protocol    = "-1"           # すべてのプロトコル
+    cidr_blocks = ["0.0.0.0/0"]  # どこに行ってもいい
+  }
+}
+```
+
+- `terraform.tfvars` に、SGで許可する自分のグローバルIPを設定（Gitに反映されないよう、別ファイルにした）
+- `terraform apply` でEC2を作成
+- `terraform state show aws_instance.lab | grep public_ip` でEC2のIPを取得
+- `ssh -i ~/.ssh/terraform-lab ec2-user@<EC2IP>` でSSH接続（`-i` は秘密鍵の指定）
+- EC2上で、Docker・Docker Compose・buildxを導入
+- 手元から、`flask-app` を転送（下の「ハマった点」を参照）
+- EC2上で `docker compose up -d --build` を実行して起動
+- 手元から `curl http://<EC2IP>:8000` で、応答を確認
+
+### ハマった点
+
+- `scp` がタイムアウト：宛先に、自分のIPを指定していた。宛先は、EC2のパブリックIP
+- 転送が遅い：`.venv` 配下のファイルが約1300個あり、時間がかかった。`Ctrl+C` で止めて、除外して再開した
+  - `rsync -av --exclude '.venv' -e "ssh -i ~/.ssh/terraform-lab" /home/quick/infra-notes/flask-app ec2-user@<EC2IP>:~/`
+- `Dockerfile` が見つからない：`rsync` は、送り元の末尾のスラッシュで、結果が変わる。スラッシュなしだと、`~/flask-app/` というフォルダができ、ありだと、中身が `~/` に、ばらばらに入る
+- `docker compose up --build` が失敗：Composeのビルドに、新しいbuildxが必要だった。公式のバイナリを入れて、解決
+- `curl` が返らない：Nginxの公開ポートは8000なのに、80番に送っていた
+![AWS構成図](docs/aws-architecture.png)
