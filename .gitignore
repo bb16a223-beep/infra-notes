@@ -7,3 +7,4 @@ __pycache__
 *.tfstate.*
 *.swp
 *.swo
+terraform.tfvars
