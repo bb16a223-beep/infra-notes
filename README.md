@@ -176,6 +176,7 @@ upstream tomcat {
 }
 ```
 
+
 この場合は `;` がないまま `}` まで読み進むので、`unexpected "}"` のようなエラーになり、指摘されるのは `}` の行になる。
 
 ### upstream 名と proxy_pass の名前の不一致
@@ -511,3 +512,34 @@ Nginx → Gunicorn → Flask(Pythonのアプリ)
 - 原因は、Nginxのワーカー毎に振り分けの数え方が別だったこと。４０回アクセスすると両方に行くことで確認
 - `upstream` に`zone flask_app 64k;`　を足して、ワーカ間で数え方を共有し、交互に振り分けた
 - Compose内のコンテナ同士は、外側ポート(5001)でなく、中のポート(5000)でつなぐ
+
+## Terraform(AWSにEC2を一台作成して削除)
+
+
+### やったこと
+- ap-
+
+### 手順
+- terraform init / fmt / validate / plan / apply / destroy の順
+
+- `terraform init` 準備。`main.tf` に書いたプロバイダ(`hashicorp/aws`)　をダウンロードし、`.terraform/`　と `.terraform.lock.hcl` を作成。最初に一回と、プロバイダを変更するときに打つ。
+- `terraform fmt` 書き方を整える。ファイルを直接書き換える。
+- `terraform validate` 文法チェック。括弧の閉じ忘れや、存在しない項目名を見つける。AWSには接続しない。
+- `terraform plan` 予行演習。「何が作られ、変わる、消える」を表示する。実際には作成しない。
+- `terraform apply` 実行、planの内容を実際に作る。`yes`　を打つと確認が消える。
+- `terraform destroy` 作ったものを全部消す。こちらも確認が出るので `yes`　で消える 。
+
+### ハマった点
+
+- plan で403(ec2:DescribeImages)
+    - 原因      : 東京リージョン(ap-northeast-1)での操作が、組織側のポリシー(SCP)で拒否されたこと。自分のIAMユーザーの権限不足ではない。
+    - 切り分け  : ec2:DescribeImagesが`explicit deny in a service control policy` ,`terraform-user` には`AmazonEC2FullAccess`をつけていた。IAMで許可しているのに拒否されているなら、IAMより上の制限(SCP)が原因だと判断した。
+    - 対応      : 無料プランではシドニーリージョン(ap-southeast-2)しか使用できないため、`main.tf`　のproviderのregionをシドニーに変更。
+
+
+### 学んだこと
+
+- 無料プランは
+- stateファイル(tfstate)と.terraform/をGitに入れない理由: 公開のリポジトリに環境の情報、秘密の情報が見えてしまうため。.terraform/はinitで再作成できるため。
+- .terraform.lock.hcl をGitに入れる理由:使うプロバイダーの名前とバージョンを固定して誰がinitしても同じバージョンを使うため。
+
