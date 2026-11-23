@@ -18,20 +18,20 @@ provider "aws" {
 # 作らずに調べるだけのブロック：最新のAmazon Linux 2023のAMIを探す
 # data = 聞くだけ
 data "aws_ami" "al2023" {  # aws_ami:何を調べるか、al2023:これは調べものに付けた名前
-  most_recent = true        # 一番新しいものから 
-  owners      = ["amazon"]  # amazon公式の中から  
+  most_recent = true       # 一番新しいものから 
+  owners      = ["amazon"] # amazon公式の中から  
 
   # AMIの名前がal2023...で始まって、途中飛ばして-x86_64のを探して
   filter {
-    name   = "name"         # name:項目 "name":名前の欄
+    name   = "name"                       # name:項目 "name":名前の欄
     values = ["al2023-ami-2023.*-x86_64"] # この条件で探して
   }
 }
 # resource = 注文
 resource "aws_instance" "lab" {
-  ami                    = data.aws_ami.al2023.id # dataで調べたAMI (呼び名:al2023)のid
-  instance_type          = "t3.micro"             # サーバの大きさ
-  key_name               = aws_key_pair.lab.key_name  # 入るための鍵
+  ami                    = data.aws_ami.al2023.id      # dataで調べたAMI (呼び名:al2023)のid
+  instance_type          = "t3.micro"                  # サーバの大きさ
+  key_name               = aws_key_pair.lab.key_name   # 入るための鍵
   vpc_security_group_ids = [aws_security_group.ssh.id] # セキュリティルール 複数指定のための括弧
 
   #   vpc_security_group_ids = [
@@ -40,8 +40,8 @@ resource "aws_instance" "lab" {
   # ] こんな感じに記載
 
   tags = {
-    Name = "terraform-lab"    # コンソールから確認するための名前
-  }                           # EC2はIDが名前の役割でありVPC内の重複ができないため、特別なタグを作成
+    Name = "terraform-lab" # コンソールから確認するための名前
+  }                        # EC2はIDが名前の役割でありVPC内の重複ができないため、特別なタグを作成
 }
 
 
@@ -77,11 +77,11 @@ resource "aws_security_group" "ssh" {
   }
   # 出ていく通信のルール
   # AWSで作成するＳＧは、全部出ていけるルールがデフォだが、Terraformでの作成に限り、このルールがないため明示的に記載
-  egress {    
-    from_port   = 0                     # protocolが全部なので慣例的な目的での記載
-    to_port     = 0                     # protocolが全部なので慣例的な目的での記載
-    protocol    = "-1"                  # すべてのプロトコル
-    cidr_blocks = ["0.0.0.0/0"]         # どこに行ってもいい
+  egress {
+    from_port   = 0             # protocolが全部なので慣例的な目的での記載
+    to_port     = 0             # protocolが全部なので慣例的な目的での記載
+    protocol    = "-1"          # すべてのプロトコル
+    cidr_blocks = ["0.0.0.0/0"] # どこに行ってもいい
   }
 }
 
