@@ -1,0 +1,3 @@
+- 2026-11-23 16:05 nginx.conf: upstream内のserver行は、転送先1台を表す
+- 2026-11-23 16:05 upstreamのzoneは、ワーカー間で転送先の状態を共有する
+- 2026-11-23 16:05 SGのdescriptionを変えると、リソースがreplaceになる
