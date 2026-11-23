@@ -542,6 +542,9 @@ Nginx → Gunicorn → Flask(Pythonのアプリ)
 - 無料プランは
 - stateファイル(tfstate)と.terraform/をGitに入れない理由: 公開のリポジトリに環境の情報、秘密の情報が見えてしまうため。.terraform/はinitで再作成できるため。
 - .terraform.lock.hcl をGitに入れる理由:使うプロバイダーの名前とバージョンを固定して誰がinitしても同じバージョンを使うため。
+
+## EC2上でComposeを動かす
+
 ### やったこと
 
 - ssh-keygenで鍵を作り、Terraformでキーペアとセキュリティグループを作成
