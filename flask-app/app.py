@@ -5,9 +5,7 @@ from flask import Flask                     # flaskのパッケージからFlask
 
 # app = Flask(...)で直接機能を呼ぶことができる(ない場合：flask.Flaskって呼び方をする)
 # ModuleNotFoundError: No mudule named '___' は今実行しているPython環境に存在しない
-
 app = Flask(__name__)
-
 
 def get_conn():                                             # def:関数として宣言　get_conn:DB接続を作る関数
     return psycopg2.connect(
