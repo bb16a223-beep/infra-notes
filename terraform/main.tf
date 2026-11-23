@@ -29,8 +29,9 @@ data "aws_ami" "al2023" {  # aws_ami:何を調べるか、al2023:これは調べ
 }
 # resource = 注文
 resource "aws_instance" "lab" {
-  ami                    = data.aws_ami.al2023.id      # dataで調べたAMI (呼び名:al2023)のid
-  instance_type          = "t3.micro"                  # サーバの大きさ
+  ami                    = data.aws_ami.al2023.id # dataで調べたAMI (呼び名:al2023)のid
+  instance_type          = "t3.micro"             # サーバの大きさ
+  subnet_id              = aws_subnet.public.id
   key_name               = aws_key_pair.lab.key_name   # 入るための鍵
   vpc_security_group_ids = [aws_security_group.ssh.id] # セキュリティルール 複数指定のための括弧
 
@@ -55,8 +56,9 @@ resource "aws_key_pair" "lab" {
 # セキュリティグループ：SSHと8000番を、自分のIPだけに許可
 # IPを変数にして、terraform.tfvarに分けた gitに載せないため
 resource "aws_security_group" "ssh" {
-  name        = "terraform-lab-ssh"   # AWSコンソールに出てくるSGの名前
-  description = "SSH form my IP only" # 説明文
+  name        = "terraform-lab-ssh" # AWSコンソールに出てくるSGの名前
+  vpc_id      = aws_vpc.lab.id
+  description = "SSH from my IP only" # 説明文
 
   # 入ってくる通信のルール
   ingress {
